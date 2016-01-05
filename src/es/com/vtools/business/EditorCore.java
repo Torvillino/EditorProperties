@@ -2,7 +2,9 @@ package es.com.vtools.business;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -14,7 +16,7 @@ import es.com.vtools.business.model.Type;
 public class EditorCore {
 
 	// Properties almacenado
-	private static Properties prop = new Properties();
+	private static Properties prop;
 	private static String path = "";
 	
 	/**
@@ -25,6 +27,7 @@ public class EditorCore {
 	public static void loadProperties(String pathprop){
 		path = pathprop;
 		try{
+			prop = new Properties();
 			// Cargamos el fichero properties
 			prop.load(new FileInputStream(path));
 		}catch(Throwable e){
@@ -33,89 +36,82 @@ public class EditorCore {
 	}
 	
 	/**
-	 * Metodo que crea la estructura en arbol
+	 * Metodo que recupera el fichero properties, y con las propiedades empieza a montar
+	 * un arbol
+	 * 
 	 */
 	public static TreeParent loadStructure(){
 		
 		// Objecto que contiene el grupo y las propiedades 
-		HashMap<String, HashMap<String, String>> mapKey = new HashMap<String,HashMap<String, String>>();
+		ArrayList<TreeObject> list = new ArrayList<TreeObject>();
 
 		// Recorremos todas las propiedades
 		for (Object element : prop.keySet()) {
+			// Creamos el objecto
+			TreeObject treeObject = new TreeObject();
 			
 			// Obtenemos la organizacion a traves del primer .
 			String keyOrg = element.toString().substring(0, element.toString().indexOf("."));
 			
 			// Obtenemos el nombre de la propiedad entre el primer y ultimo punto
-			String keyProperties = element.toString().substring(element.toString().indexOf(".") + 1, element.toString().length());
+			String nameProperties = element.toString().substring(element.toString().indexOf(".") + 1, element.toString().length());
+			nameProperties+= "=" + prop.getProperty(element.toString());
+
+			// Establecemos los valores
+			treeObject.setKeyOrg(keyOrg);
+			treeObject.setPropertieKey(element.toString());
+			treeObject.setPropertieName(nameProperties);
+			treeObject.setText(nameProperties);
 			
-			// Agregamos el valor de la propiedad
-			keyProperties+= "=" + prop.getProperty(element.toString());
-			
-			// Si contiene el grupo agregamos la propiedad
-			if(mapKey.containsKey(keyOrg)){
-				mapKey.get(keyOrg).put(keyProperties, element.toString());
-				
+			// Comprobamos si era propiedad cifrada
+			if(keyOrg.toUpperCase().startsWith("X_")){
+				treeObject.setType(Type.CIFR);
 			}else{
-				
-				// Comprobamos si era propiedad cifrada
-				if(keyOrg.toUpperCase().startsWith("X_")){
-					keyOrg = keyOrg.toUpperCase().replaceFirst("X_", "");
-					// Si no contiene el grupo lo creamos y agregamos la propiedad				
-					mapKey.put(keyOrg, new HashMap<String,String>());
-					mapKey.get(keyOrg).put("X_" + keyProperties, element.toString());
-				}else{
-					// Si no contiene el grupo lo creamos y agregamos la propiedad				
-					mapKey.put(keyOrg, new HashMap<String,String>());
-					mapKey.get(keyOrg).put(keyProperties, element.toString());
-				}
+				treeObject.setType(Type.PROP);
 			}
+			list.add(treeObject);
 		}
 		
 		// Creamos la organizacion padre
 		TreeParent root = new TreeParent("Organization");
 		root.setType(Type.ROOT);
-		for (Entry<String, HashMap<String, String>> mapElement : mapKey.entrySet()) {
-			
-			// Creamos la organizacion
-			TreeParent treeParent = new TreeParent(mapElement.getKey());
-			treeParent.setType(Type.FOLDER);
-			
-			// Por cada propiedad la almacenamos en la organizacion
-			for (String iterable_element : mapElement.getValue().keySet()) {
-				
-				TreeObject treeObj = new TreeObject(iterable_element);
-				// Comprobamos el tipo sabiendo si es de cifrado
-				if(iterable_element.toUpperCase().startsWith("X_")){
-					treeObj.setType(Type.CIFR);
-				}else{
-					treeObj.setType(Type.PROP);
-				}
-				
-				treeObj.setPropertieKey(mapElement.getKey() + "." + iterable_element);
-				treeParent.addChild(treeObj);
-			}
-			
-			// Lo agregamos al padre
-			root.addChild(treeParent);
+		for (TreeObject treeObject : list) {
+			root.addChild(treeObject);
 		}
 		
 		return root;
 	}
 	
-	public static void modifyProperty(String key, String value){
+	/**
+	 * Metodo que modifica una propiedad
+	 * y lo guarda en el fichero de propiedades
+	 * 
+	 * @param key
+	 * @param value
+	 */
+	public static void modifyProperty(String key, String value) throws Exception{
+		
+		FileOutputStream out = new FileOutputStream(path);
 		prop.setProperty(key, value);
+		prop.store(out, null);
+		out.close();
 	}
 	
+	/**
+	 * Metodo que realiza la recarga del fichero de propiedades
+	 * 
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public static void reloadProp() throws FileNotFoundException, IOException{
+		prop = new Properties();
 		prop.load(new FileInputStream(path));
 	}
 	
 	/**
-	 * Metodo que crea la estructura en arbol
+	 * Metodo que crea la estructura inicial del arbol
 	 */
 	public static TreeParent initStructure(){
-		
 		TreeParent root = new TreeParent("Seleccione un fichero");
 		return root;
 	}

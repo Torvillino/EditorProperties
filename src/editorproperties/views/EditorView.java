@@ -233,13 +233,19 @@ public class EditorView extends ViewPart {
                 PropertieDialog dialog = new PropertieDialog(viewer.getControl().getShell(), treeObject.getText(), null);
                 dialog.create();
                 if (dialog.open() ==  Window.OK) {
-                	EditorCore.modifyProperty(treeObject.getPropertieKey(), dialog.getNewPropertie());
                 	try {
+                		EditorCore.modifyProperty(treeObject.getPropertieKey(), dialog.getNewPropertie());
 						EditorCore.reloadProp();
+						ViewContentProvider viewContentProvider = new ViewContentProvider();
+						viewContentProvider.changeRoot();
+						viewer.setContentProvider(viewContentProvider);
 					} catch (FileNotFoundException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
