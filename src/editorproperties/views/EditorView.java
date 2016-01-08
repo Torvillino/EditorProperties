@@ -155,7 +155,6 @@ public class EditorView extends ViewPart {
 		getSite().setSelectionProvider(viewer);
 		makeActions();
 		hookContextMenu();
-		hookDoubleClickAction();
 		contributeToActionBars();
 	}
 
@@ -214,7 +213,7 @@ public class EditorView extends ViewPart {
 				dialog.setFilterPath("D:\\");
 				EditorCore.loadProperties(dialog.open());
 				ViewContentProvider viewContentProvider = new ViewContentProvider();
-				viewContentProvider.changeRoot();
+				viewContentProvider.changeRoot();				
 				viewer.setContentProvider(viewContentProvider);
 				
 			}
@@ -239,6 +238,8 @@ public class EditorView extends ViewPart {
 						ViewContentProvider viewContentProvider = new ViewContentProvider();
 						viewContentProvider.changeRoot();
 						viewer.setContentProvider(viewContentProvider);
+						viewer.expandAll();
+						viewer.setSelection(selection);
 					} catch (FileNotFoundException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -257,14 +258,6 @@ public class EditorView extends ViewPart {
 		modifyProperties.setToolTipText("Modifique una propiedad");
 		modifyProperties.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
 			getImageDescriptor(ISharedImages.IMG_ETOOL_CLEAR));
-	}
-
-	private void hookDoubleClickAction() {
-		viewer.addDoubleClickListener(new IDoubleClickListener() {
-			public void doubleClick(DoubleClickEvent event) {
-				doubleClickAction.run();
-			}
-		});
 	}
 
 	/**
